@@ -1,4 +1,5 @@
-import express, { Request } from "express";
+import axios from "axios";
+import express, { NextFunction, Request, Response } from "express";
 import {
   createProxyMiddleware,
   Filter,
@@ -8,8 +9,15 @@ import {
 
 const router = express.Router();
 
-const servers = [
+export const servers = [
   {
+    id: 1,
+    host: "localhost",
+    port: 3000,
+    weight: 1,
+  },
+  {
+    id: 2,
     host: "localhost",
     port: 3000,
     weight: 1,
@@ -55,8 +63,28 @@ console.log(proxyOptions.target);
 //   },
 // });
 // });
+
+let healthyServers = [];
+
+async function ishealthy(req: Request, res: Response, next: NextFunction) {
+  // const data = updateHealthyServers();
+  if (healthyServers.length === 0) {
+    return res.status(500).send("No healthy servers!");
+  }
+  next();
+}
+
+async function updateHealthyServers() {
+  // Check health status
+  // ...
+  const response = await axios.get(`https://localhost:2000/app`);
+  console.log(response);
+  return response;
+}
+
 router.all(
   "*",
+  ishealthy,
   createProxyMiddleware({
     target: `http://${target.host}:${target.port}`,
     changeOrigin: true,
